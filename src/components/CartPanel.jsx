@@ -10,9 +10,22 @@ export default function CartPanel({ open, onClose, cart, onInc, onDec, onRemove,
   const discount = 0;
   const total = Math.max(0, subtotal - discount);
 
+  const validPhone = /^\d{8,15}$/.test(phone.trim());
+
   const handlePlaceOrder = (e) => {
     e.preventDefault();
-    if (!customerName.trim() || !phone.trim()) return;
+    if (!customerName.trim()) {
+      alert('Please enter your name.');
+      return;
+    }
+    if (!validPhone) {
+      alert('Please enter a valid phone number (8-15 digits).');
+      return;
+    }
+    if (cart.length === 0) {
+      alert('Your cart is empty.');
+      return;
+    }
     const payload = {
       customer_name: customerName.trim(),
       phone: phone.trim(),
@@ -105,6 +118,9 @@ export default function CartPanel({ open, onClose, cart, onInc, onDec, onRemove,
                 onChange={(e) => setPhone(e.target.value)}
                 required
                 placeholder="Contact number"
+                inputMode="numeric"
+                pattern="\\d{8,15}"
+                title="Enter 8 to 15 digits"
               />
             </div>
             <div>

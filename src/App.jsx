@@ -4,7 +4,19 @@ import OffersBanner from './components/OffersBanner.jsx';
 import MenuGrid from './components/MenuGrid.jsx';
 import CartPanel from './components/CartPanel.jsx';
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+// Resolve backend base URL robustly
+function resolveApiBase() {
+  const envUrl = import.meta.env.VITE_BACKEND_URL;
+  if (envUrl) return envUrl.replace(/\/$/, '');
+  try {
+    const { protocol, hostname } = window.location;
+    return `${protocol}//${hostname}:8000`;
+  } catch (e) {
+    return 'http://localhost:8000';
+  }
+}
+
+const API_BASE = resolveApiBase();
 
 export default function App() {
   const [menu, setMenu] = useState({});
@@ -17,6 +29,7 @@ export default function App() {
     const loadMenu = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/menu`);
+        if (!res.ok) throw new Error(`Menu load failed: ${res.status}`);
         const data = await res.json();
         setMenu(data.categories || {});
       } catch (e) {
@@ -55,14 +68,25 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Failed to place order');
-      const data = await res.json();
+      let bodyText = '';
+      try { bodyText = await res.text(); } catch {}
+      if (!res.ok) {
+        let detail = 'Unknown error';
+        try {
+          const parsed = JSON.parse(bodyText);
+          detail = parsed.detail || JSON.stringify(parsed);
+        } catch {
+          detail = bodyText || `${res.status} ${res.statusText}`;
+        }
+        throw new Error(detail);
+      }
+      const data = bodyText ? JSON.parse(bodyText) : {};
       onReset?.();
       clear();
-      alert(`Order placed successfully! Order ID: ${data.order_id}`);
+      alert(`Order placed successfully! Order ID: ${data.order_id || 'N/A'}`);
       setCartOpen(false);
     } catch (e) {
-      alert('Could not place order. Please try again.');
+      alert(`Could not place order. ${e.message || 'Please try again.'}`);
       console.error(e);
     } finally {
       setPlacing(false);
