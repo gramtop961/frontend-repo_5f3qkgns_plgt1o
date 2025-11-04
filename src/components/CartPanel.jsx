@@ -10,7 +10,13 @@ export default function CartPanel({ open, onClose, cart, onInc, onDec, onRemove,
   const discount = 0;
   const total = Math.max(0, subtotal - discount);
 
-  const validPhone = /^\d{8,15}$/.test(phone.trim());
+  // Only allow digits, clamp to 15 chars for UX. Validation still checks 8-15 digits.
+  const handlePhoneChange = (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 15);
+    setPhone(digitsOnly);
+  };
+
+  const validPhone = /^[0-9]{8,15}$/.test((phone || '').trim());
 
   const handlePlaceOrder = (e) => {
     e.preventDefault();
@@ -108,6 +114,7 @@ export default function CartPanel({ open, onClose, cart, onInc, onDec, onRemove,
                 onChange={(e) => setCustomerName(e.target.value)}
                 required
                 placeholder="Your name"
+                autoComplete="name"
               />
             </div>
             <div>
@@ -115,13 +122,18 @@ export default function CartPanel({ open, onClose, cart, onInc, onDec, onRemove,
               <input
                 className="w-full mt-1 px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-rose-400"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={handlePhoneChange}
                 required
                 placeholder="Contact number"
+                type="tel"
                 inputMode="numeric"
-                pattern="\\d{8,15}"
+                pattern="^[0-9]{8,15}$"
                 title="Enter 8 to 15 digits"
+                autoComplete="tel"
               />
+              {!validPhone && phone.length > 0 && (
+                <p className="mt-1 text-xs text-rose-600">Phone number must be 8 to 15 digits.</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700">Payment</label>
